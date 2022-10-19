@@ -1,14 +1,8 @@
 import numpy as np
+import gen_chrom as gc
 
 distance_array = np.array([[0,25.1,21.9,31.7,45.4],[25.1,0,44.9,18,68.6],[21.9,44.9,0,50.7,27.7],[31.7,18,50.7,0,74.4],[45.4,68.6,27.7,74.4,0]])
-ta1 = np.array([[1,0,0,0,0],[0,1,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0]])
-ta2 = np.array([[0,0,0,1,0],[0,1,0,0,0],[0,0,1,0,0],[1,0,0,0,0],[0,0,0,0,1]])
-popsub = {250:ta1, 37:ta2}
-
-x = popsub.values()
-fittest = min(popsub.keys())
-print(popsub[fittest])
-
+#gc.gen_permtx(5)
 
 def fitness_function(chrom):
     '''
@@ -32,4 +26,3 @@ def crossover():
 
 def mutate():
     pass
-
