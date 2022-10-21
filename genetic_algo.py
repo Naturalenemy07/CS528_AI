@@ -2,7 +2,10 @@ import numpy as np
 import gen_chrom as gc
 
 distance_array = np.array([[0,25.1,21.9,31.7,45.4],[25.1,0,44.9,18,68.6],[21.9,44.9,0,50.7,27.7],[31.7,18,50.7,0,74.4],[45.4,68.6,27.7,74.4,0]])
-#gc.gen_permtx(5)
+def gen_pop(num):
+    # build structured array
+    dtype=[('chrom', np.ndarray),('fit', np.float32)]
+
 
 def fitness_function(chrom):
     '''
