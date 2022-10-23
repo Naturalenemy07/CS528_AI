@@ -76,8 +76,6 @@ subpop = gen_pop(init_pop_size)
 # get fitness for each chromosome
 for i in range(0, subpop.size):
     subpop[i]['fit'] = fitness_function(subpop[i]['chrom'])
-    print(subpop[i]['chrom'])
-    print(subpop[i]['fit'])
 
 # go through all in population, apply mutation
 for i in range(0,subpop.size):
