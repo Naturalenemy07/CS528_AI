@@ -26,9 +26,6 @@ def gen_pop(num):
         
     return sub_pop
 
-def row_swap(arr1, arr2):
-    pass
-
 def fitness_function(chrom):
     '''
     This function takes the chromosome and returns the total distance travelled
