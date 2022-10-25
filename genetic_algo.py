@@ -3,13 +3,16 @@ import numpy as np
 import gen_chrom as gc
 import random
 
+# Global variables
 cities = ["Frederick", "Hagerstown", "Germantown", "Shepardstown", "WashingtonDC"]
 distance_array = np.array([[0,25.1,21.9,31.7,45.4],[25.1,0,44.9,18,68.6],[21.9,44.9,0,50.7,27.7],[31.7,18,50.7,0,74.4],[45.4,68.6,27.7,74.4,0]])
-mut_rate = 0.005
-init_pop_size = 20
+mut_rate = 0.01
+init_pop_size = 10
+num_child = 5
 
 # initiate global variable for sub population, build structured array (chromosome, fitness)
 dtype=[('chrom', np.ndarray),('fit', np.float32)]
+
 # initialize first chromosome, assign a fitness of 0.0
 init_pop = np.array([(gc.gen_permtx(5), 0.0)], dtype=dtype)
 arr_size = distance_array.shape[0]
@@ -23,7 +26,7 @@ def gen_pop(num):
     # append new (chromosome, fitness) to the sub_pop structured array, will total to "num" number of chromosome-fitness pairs
     # does not check for identical chromosomes, not too concerned with "twins"
     for i in range(num-1):
-        init_pop = np.append(init_pop, np.array([(gc.gen_permtx(arr_size), 0.0)],dtype=dtype))
+        init_pop = np.append(init_pop, np.array([(gc.gen_permtx(arr_size), 0.0)], dtype=dtype))
     return init_pop
 
 def fit_func(chrom):
@@ -41,33 +44,42 @@ def fit_func(chrom):
 
 def crossover_genes(chrom):
     '''
-    Perform crossver by swapping the last two rows, return child
+    Perform crossver by swapping the last and middle rows, return child - permutation matrix prevents proper sexual reproduction
     '''
-    last_gene = chrom['chrom'][0].shape[0] - 1
-    chrom['chrom'][0][[last_gene-1,last_gene]] = chrom['chrom'][0][[last_gene,last_gene-1]]
+    # last_gene = chrom['chrom'][0].shape[0] - 1
+    # chrom['chrom'][0][[last_gene-2,last_gene]] = chrom['chrom'][0][[last_gene,last_gene-2]]
+
     return chrom
 
-def r_select(subpop):
+def mate_select(subpop):
     '''
     Performs roulette selection, returns 1 parent for asexual reproduction
     '''
     # create inverse fitnesses
     copy_subpop = np.copy(subpop)
-    inv = []
+    inv = np.array([])
     for chromosome in subpop:
-        inv.append(1/chromosome['fit'])
+        inv = np.append(inv, 1/chromosome['fit'])
+
+    # get first positions of the most and least fit
+    pos_mostfit =  np.argmax(inv)
+    pos_leastfit = np.argmin(inv)
+
+    # Bias selection towards most fit, remove chance of selecting least fit
+    inv[pos_mostfit] = inv[pos_mostfit] + inv[pos_leastfit]
+    inv[pos_leastfit] = 0.0
 
     # generate normalized inverses to have highest chance of selecting minimum, assign to chromosome
-    suminv = sum(inv)
+    suminv = np.sum(inv)
     for i in range(subpop.size):
         copy_subpop[i]['fit'] = float("{:.8f}".format(inv[i]/suminv))
 
     # select 
     return np.random.choice(subpop, 1, p=copy_subpop['fit'])
 
-def kill_least_fit():
+def kill_select():
     '''
-    remove least fit amongst population, cannot get numpy sort to work need to do it myself
+    Perform roulette selection, least fit is most selected for being killed
     '''
     global live_sub_pop
 
@@ -132,24 +144,26 @@ def hum_read(subpop):
 live_sub_pop = gen_pop(init_pop_size)
 
 
-for j in range(0, 1000):
+for generation in range(0, 50):
     # get fitness for each chromosome
     for i in range(0, live_sub_pop.size):
         live_sub_pop[i]['fit'] = fit_func(live_sub_pop[i]['chrom'])
 
     # choose who will have child, perform crossover, add child to population
-    selected_chromosome = np.copy(r_select(live_sub_pop))
+    selected_chromosome = np.copy(mate_select(live_sub_pop))
     child = crossover_genes(selected_chromosome)
     child['fit'] = fit_func(child['chrom'][0])
-    live_sub_pop = np.append(live_sub_pop, child)
+    for j in range(num_child):
+        live_sub_pop = np.append(live_sub_pop, child)
 
     # delete least fit
-    live_sub_pop = kill_least_fit()
+    for k in range(num_child):
+        live_sub_pop = kill_select()
 
     # go through all in population, apply mutation
-    for i in range(0, live_sub_pop.size):
+    for l in range(0, live_sub_pop.size):
         live_sub_pop[i]['chrom'] = mutate_gene(mut_rate, live_sub_pop[i]['chrom'])
     
     #print all paths
-    print("iteration:", j)
+    print("iteration:", generation)
     hum_read(live_sub_pop)
