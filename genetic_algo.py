@@ -55,10 +55,7 @@ def crossover_genes(chrom1, chrom2):
         poslist = random.sample([0,1,2,3,4],3)
         return poslist
 
-    # last_gene = chrom['chrom'][0].shape[0] - 1
-    # chrom['chrom'][0][[last_gene-1,last_gene]] = chrom['chrom'][0][[last_gene,last_gene-1]]
     child_gene = [0,0,0,0,0]
-
 
     # first gene (first city visited) from parent 1 and last gene (last city visited) from parent two will go to child, rest is random
     child_gene[0] = chrom1['chrom'][0].nonzero()[1][0]
@@ -87,7 +84,6 @@ def crossover_genes(chrom1, chrom2):
     blank_child = np.zeros((5,5), dtype=int)
     for row in range(0,5):
         blank_child[row,child_gene[row]]=1
-    
     child_chromosome = np.array([(blank_child, fit_func(blank_child))], dtype=dtype)
 
     return child_chromosome
