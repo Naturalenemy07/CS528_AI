@@ -6,11 +6,12 @@ import random
 # Global variables
 cities = ["Frederick", "Hagerstown", "Germantown", "Shepardstown", "WashingtonDC"]
 distance_array = np.array([[0,25.1,21.9,31.7,45.4],[25.1,0,44.9,18,68.6],[21.9,44.9,0,50.7,27.7],[31.7,18,50.7,0,74.4],[45.4,68.6,27.7,74.4,0]])
-mut_rate = 0.015
-init_pop_size = 3
-num_child = 1
-num_kill = 1
+mut_rate = 0.1
+init_pop_size = 5
+num_child = 2
+num_kill = 2
 best_dist = 1000
+known_best = 92.7
 best_path = []
 
 # initiate global variable for sub population, build structured array (chromosome, fitness)
@@ -45,15 +46,51 @@ def fit_func(chrom):
         dist += dist_int
     return "{:.1f}".format(dist)
 
-def crossover_genes(chrom):
+def crossover_genes(chrom1, chrom2):
     '''
     Perform crossver by swapping the last and middle rows, return child - permutation matrix prevents proper sexual reproduction
-    Returns clone of gene
+    Returns clone of gene. Not most efficient but i will accept as list has only a length of 3.
     '''
-    last_gene = chrom['chrom'][0].shape[0] - 1
-    chrom['chrom'][0][[last_gene-1,last_gene]] = chrom['chrom'][0][[last_gene,last_gene-1]]
+    def gen_poslist():
+        poslist = random.sample([0,1,2,3,4],3)
+        return poslist
 
-    return chrom
+    # last_gene = chrom['chrom'][0].shape[0] - 1
+    # chrom['chrom'][0][[last_gene-1,last_gene]] = chrom['chrom'][0][[last_gene,last_gene-1]]
+    child_gene = [0,0,0,0,0]
+
+
+    # first gene (first city visited) from parent 1 and last gene (last city visited) from parent two will go to child, rest is random
+    child_gene[0] = chrom1['chrom'][0].nonzero()[1][0]
+    child_gene[4] = chrom2['chrom'][0].nonzero()[1][4]
+
+    # middle genes can be anything that isn't already taken by first and last gene
+    in_chrom = True
+
+    # checks if middle genes exist as first or second gene
+    while in_chrom == True:
+        count = 1
+        initposlist = gen_poslist()
+        for item in initposlist:
+            if item not in child_gene:
+                count+=1
+            else:
+                break
+        if count == 3:
+            in_chrom = False
+
+    # adds to child gene
+    for i in range(0,3):
+        child_gene[i+1] = initposlist[i]
+
+    # builds child chromosome
+    blank_child = np.zeros((5,5), dtype=int)
+    for row in range(0,5):
+        blank_child[row,child_gene[row]]=1
+    
+    child_chromosome = np.array([(blank_child, fit_func(blank_child))], dtype=dtype)
+
+    return child_chromosome
 
 def mate_select(subpop):
     '''
@@ -173,8 +210,9 @@ for generation in range(0,3000):
         live_sub_pop[fit_i]['fit'] = fit_func(live_sub_pop[fit_i]['chrom'])
 
     # choose who will have child, perform crossover, add child to population
-    selected_chromosome = np.copy(mate_select(live_sub_pop))
-    child = np.copy(crossover_genes(selected_chromosome))
+    selected_chromosome1 = np.copy(mate_select(live_sub_pop))
+    selected_chromosome2 = np.copy(mate_select(live_sub_pop))
+    child = np.copy(crossover_genes(selected_chromosome1, selected_chromosome2))
     child['fit'] = fit_func(child['chrom'][0])
     for child_j in range(num_child):
         live_sub_pop = np.append(live_sub_pop, child)
@@ -192,7 +230,7 @@ for generation in range(0,3000):
         live_sub_pop[update_m]['fit'] = fit_func(live_sub_pop[update_m]['chrom'])
     
     # hum_read(live_sub_pop)
-    if calc_best_dist(live_sub_pop) < 93:
+    if calc_best_dist(live_sub_pop) <= known_best:
         print("Best achieved on generation:", generation, "at", best_dist, "miles with path:")
         print("-".join(best_path))
         break
