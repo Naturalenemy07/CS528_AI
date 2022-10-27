@@ -7,10 +7,11 @@ import random
 cities = ["Frederick", "Hagerstown", "Germantown", "Shepardstown", "WashingtonDC"]
 distance_array = np.array([[0,25.1,21.9,31.7,45.4],[25.1,0,44.9,18,68.6],[21.9,44.9,0,50.7,27.7],[31.7,18,50.7,0,74.4],[45.4,68.6,27.7,74.4,0]])
 mut_rate = 0.015
-init_pop_size = 10
+init_pop_size = 3
 num_child = 1
 num_kill = 1
-best_dist = 0
+best_dist = 1000
+best_path = []
 
 # initiate global variable for sub population, build structured array (chromosome, fitness)
 dtype=[('chrom', np.ndarray),('fit', np.float32)]
@@ -49,8 +50,8 @@ def crossover_genes(chrom):
     Perform crossver by swapping the last and middle rows, return child - permutation matrix prevents proper sexual reproduction
     Returns clone of gene
     '''
-    # last_gene = chrom['chrom'][0].shape[0] - 1
-    # chrom['chrom'][0][[last_gene-1,last_gene]] = chrom['chrom'][0][[last_gene,last_gene-1]]
+    last_gene = chrom['chrom'][0].shape[0] - 1
+    chrom['chrom'][0][[last_gene-1,last_gene]] = chrom['chrom'][0][[last_gene,last_gene-1]]
 
     return chrom
 
@@ -144,22 +145,18 @@ def calc_best_dist(subpop):
     Stores best distance, returns current best dist
     '''
     global best_dist
-    best_path = []
+    global best_path
 
     for chromosome in subpop:
         if chromosome['fit'] < best_dist:
+            temp_path = 0
+            best_path.clear()
             best_dist = chromosome['fit']
             temp_path = chromosome['chrom'].nonzero()[1] 
             for visit in temp_path:
                 best_path.append(cities[visit])
-    
-    readout = '->'.join(best_path)
-    print(readout)
-    print(readout + ": " + str(best_dist) + " " + "miles")
-    return 0
 
-
-
+    return best_dist
 
 
 ###########################
@@ -170,7 +167,7 @@ def calc_best_dist(subpop):
 live_sub_pop = gen_pop(init_pop_size)
 
 
-for generation in range(0, 10):
+for generation in range(0,3000):
     # get fitness for each chromosome
     for fit_i in range(0, live_sub_pop.size):
         live_sub_pop[fit_i]['fit'] = fit_func(live_sub_pop[fit_i]['chrom'])
@@ -194,7 +191,8 @@ for generation in range(0, 10):
     for update_m in range(0, live_sub_pop.size):
         live_sub_pop[update_m]['fit'] = fit_func(live_sub_pop[update_m]['chrom'])
     
-    #print all paths
-    print("iteration:", generation)
     # hum_read(live_sub_pop)
-    print(calc_best_dist(live_sub_pop))
+    if calc_best_dist(live_sub_pop) < 93:
+        print("Best achieved on generation:", generation, "at", best_dist, "miles with path:")
+        print("-".join(best_path))
+        break
